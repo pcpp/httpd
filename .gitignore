@@ -4,4 +4,7 @@ obj
 *.manlint
 *~
 *.core
+*.d
 *.o
+parse.c
+httpd/httpd
