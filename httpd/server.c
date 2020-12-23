@@ -867,6 +867,7 @@ server_write(struct bufferevent *bev, void *arg)
 {
 	struct client		*clt = arg;
 	struct evbuffer		*dst = EVBUFFER_OUTPUT(bev);
+	struct server_config    *srv_conf = clt->clt_srv_conf;
 
 	if (EVBUFFER_LENGTH(dst) == 0 &&
 	    clt->clt_toread == TOREAD_HTTP_NONE)
@@ -878,8 +879,11 @@ server_write(struct bufferevent *bev, void *arg)
 		goto done;
 
 	if (clt->clt_srvbev && clt->clt_srvbev_throttled) {
-		bufferevent_enable(clt->clt_srvbev, EV_READ);
-		clt->clt_srvbev_throttled = 0;
+		if (EVBUFFER_LENGTH(dst) < (size_t)
+		    (srv_conf->lowwatermark ? srv_conf->lowwatermark : SERVER_LOW_WATERMARK * clt->clt_sndbufsiz)) {
+			bufferevent_enable(clt->clt_srvbev, EV_READ);
+			clt->clt_srvbev_throttled = 0;
+		}
 	}
 
 	return;
