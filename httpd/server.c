@@ -869,6 +869,16 @@ server_write(struct bufferevent *bev, void *arg)
 	struct evbuffer		*dst = EVBUFFER_OUTPUT(bev);
 	struct server_config    *srv_conf = clt->clt_srv_conf;
 
+#ifdef CSRBDEBUG
+	log_info("server_write(): [%p/%p] dst buffer %zu, client output buffer %zu, server input buffer %zu, high watermark %zu, throttled %d",
+	    bev, arg,
+	    EVBUFFER_LENGTH(dst),
+	    EVBUFFER_LENGTH(EVBUFFER_OUTPUT(clt->clt_bev)),
+	    clt->clt_srvbev ? EVBUFFER_LENGTH(EVBUFFER_INPUT(clt->clt_srvbev)) : -1,
+	    srv_conf->lowwatermark,
+	    clt->clt_srvbev ? clt->clt_srvbev_throttled : -1);
+#endif
+
 	if (EVBUFFER_LENGTH(dst) == 0 &&
 	    clt->clt_toread == TOREAD_HTTP_NONE)
 		goto done;
@@ -919,12 +929,25 @@ server_read(struct bufferevent *bev, void *arg)
 
 	getmonotime(&clt->clt_tv_last);
 
+#ifdef CSRBDEBUG
+	log_info("server_read(): [%p/%p] output buffer length %zu",
+	    bev, arg,
+	    EVBUFFER_LENGTH(EVBUFFER_OUTPUT(clt->clt_bev)));
+#endif
+
 	if (!EVBUFFER_LENGTH(src))
 		return;
 	if (server_bufferevent_write_buffer(clt, src) == -1)
 		goto fail;
 	if (clt->clt_done)
 		goto done;
+
+#ifdef CSRBDEBUG
+	log_info("server_read(): [%p/%p] output buffer length %zu > %zu",
+	    bev, arg,
+	    EVBUFFER_LENGTH(EVBUFFER_OUTPUT(clt->clt_bev)),
+	    srv_conf->highwatermark);
+#endif
 
 	if (EVBUFFER_LENGTH(EVBUFFER_OUTPUT(clt->clt_bev)) > (size_t)
 	    (srv_conf->highwatermark ? srv_conf->highwatermark : SERVER_HIGH_WATERMARK * clt->clt_sndbufsiz)) {

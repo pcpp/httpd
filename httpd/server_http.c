@@ -208,6 +208,11 @@ server_read_http(struct bufferevent *bev, void *arg)
 
 	getmonotime(&clt->clt_tv_last);
 
+#ifdef CSRBDEBUG
+	log_info("server_read_http(): input length %zu",
+	    EVBUFFER_LENGTH(EVBUFFER_INPUT(bev)));
+#endif
+
 	size = EVBUFFER_LENGTH(src);
 	DPRINTF("%s: session %d: size %lu, to read %lld",
 	    __func__, clt->clt_id, size, clt->clt_toread);
@@ -638,6 +643,14 @@ server_read_httprange(struct bufferevent *bev, void *arg)
 	struct range		*range;
 	struct server_config    *srv_conf = clt->clt_srv_conf;
 
+#ifdef CSRBDEBUG
+	log_info("server_read_httprange(): START: [%d] source buffer %zu, range_toread %jd, destination buffer %zu",
+	    clt->clt_fd,
+	    EVBUFFER_LENGTH(src),
+	    r->range_toread,
+	    EVBUFFER_LENGTH(EVBUFFER_OUTPUT(clt->clt_bev)));
+#endif
+
 	getmonotime(&clt->clt_tv_last);
 
 	if (r->range_toread > 0) {
@@ -708,6 +721,14 @@ server_read_httprange(struct bufferevent *bev, void *arg)
 
 	if (clt->clt_done)
 		goto done;
+
+#ifdef CSRBDEBUG
+	log_info("server_read_httprange(): END: [%d] source buffer %zu, destination buffer %zu, high watermark %zu",
+	    clt->clt_fd,
+	    EVBUFFER_LENGTH(src),
+	    EVBUFFER_LENGTH(EVBUFFER_OUTPUT(clt->clt_bev)),
+	    srv_conf->highwatermark);
+#endif
 
 	if (EVBUFFER_LENGTH(EVBUFFER_OUTPUT(clt->clt_bev)) > (size_t)
 	    (srv_conf->highwatermark ? srv_conf->highwatermark : SERVER_HIGH_WATERMARK * clt->clt_sndbufsiz)) {

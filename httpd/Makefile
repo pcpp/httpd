@@ -17,6 +17,7 @@ CFLAGS+=	-Wstrict-prototypes -Wmissing-prototypes
 CFLAGS+=	-Wmissing-declarations
 CFLAGS+=	-Wshadow -Wpointer-arith
 CFLAGS+=	-Wsign-compare -Wcast-qual
+#CFLAGS+=	-DCSRBDEBUG
 YFLAGS=
 
 .include <bsd.prog.mk>
