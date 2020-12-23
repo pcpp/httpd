@@ -72,8 +72,8 @@
 #define SERVER_MAXREQUESTBODY	1048576	/* 1M */
 #define SERVER_BACKLOG		10
 #define SERVER_OUTOF_FD_RETRIES	5
-#define SERVER_MAX_PREFETCH	256
-#define SERVER_MIN_PREFETCHED	32
+#define SERVER_LOW_WATERMARK	256	/* multiples of SO_SNDBUF size */
+#define SERVER_HIGH_WATERMARK	32	/* multiples of SO_SNDBUF size */
 #define SERVER_HSTS_DEFAULT_AGE	31536000
 #define SERVER_MAX_RANGES	4
 #define SERVER_DEF_TLS_LIFETIME	(2 * 3600)
@@ -475,6 +475,8 @@ struct server_config {
 	struct timeval		 requesttimeout;
 	uint32_t		 maxrequests;
 	size_t			 maxrequestbody;
+	size_t			 lowwatermark;
+	size_t			 highwatermark;
 
 	uint8_t			*tls_cert;
 	size_t			 tls_cert_len;

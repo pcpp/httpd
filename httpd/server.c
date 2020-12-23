@@ -853,7 +853,7 @@ server_input(struct client *clt)
 
 	/* Adjust write watermark to the socket buffer output size */
 	bufferevent_setwatermark(clt->clt_bev, EV_WRITE,
-	    SERVER_MIN_PREFETCHED * clt->clt_sndbufsiz, 0);
+	    srv_conf->lowwatermark ? srv_conf->lowwatermark : SERVER_LOW_WATERMARK * clt->clt_sndbufsiz, 0);
 	/* Read at most amount of data that fits in one fcgi record. */
 	bufferevent_setwatermark(clt->clt_bev, EV_READ, 0, FCGI_CONTENT_SIZE);
 
@@ -911,6 +911,7 @@ server_read(struct bufferevent *bev, void *arg)
 {
 	struct client		*clt = arg;
 	struct evbuffer		*src = EVBUFFER_INPUT(bev);
+	struct server_config    *srv_conf = clt->clt_srv_conf;
 
 	getmonotime(&clt->clt_tv_last);
 
@@ -922,7 +923,7 @@ server_read(struct bufferevent *bev, void *arg)
 		goto done;
 
 	if (EVBUFFER_LENGTH(EVBUFFER_OUTPUT(clt->clt_bev)) > (size_t)
-	    SERVER_MAX_PREFETCH * clt->clt_sndbufsiz) {
+	    (srv_conf->highwatermark ? srv_conf->highwatermark : SERVER_HIGH_WATERMARK * clt->clt_sndbufsiz)) {
 		bufferevent_disable(clt->clt_srvbev, EV_READ);
 		clt->clt_srvbev_throttled = 1;
 	}

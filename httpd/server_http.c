@@ -636,6 +636,7 @@ server_read_httprange(struct bufferevent *bev, void *arg)
 	struct media_type	*media;
 	struct range_data	*r = &clt->clt_ranges;
 	struct range		*range;
+	struct server_config    *srv_conf = clt->clt_srv_conf;
 
 	getmonotime(&clt->clt_tv_last);
 
@@ -709,7 +710,7 @@ server_read_httprange(struct bufferevent *bev, void *arg)
 		goto done;
 
 	if (EVBUFFER_LENGTH(EVBUFFER_OUTPUT(clt->clt_bev)) > (size_t)
-	    SERVER_MAX_PREFETCH * clt->clt_sndbufsiz) {
+	    (srv_conf->highwatermark ? srv_conf->highwatermark : SERVER_HIGH_WATERMARK * clt->clt_sndbufsiz)) {
 		bufferevent_disable(clt->clt_srvbev, EV_READ);
 		clt->clt_srvbev_throttled = 1;
 	}

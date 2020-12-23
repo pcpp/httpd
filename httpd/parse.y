@@ -134,7 +134,7 @@ typedef struct {
 %token	LISTEN LOCATION LOG LOGDIR MATCH MAXIMUM NO NODELAY OCSP ON PORT PREFORK
 %token	PROTOCOLS REQUESTS ROOT SACK SERVER SOCKET STRIP STYLE SYSLOG TCP TICKET
 %token	TIMEOUT TLS TYPE TYPES HSTS MAXAGE SUBDOMAINS DEFAULT PRELOAD REQUEST
-%token	ERROR INCLUDE AUTHENTICATE WITH BLOCK DROP RETURN PASS
+%token	ERROR INCLUDE AUTHENTICATE WITH BLOCK DROP RETURN PASS WATERMARK HIGH LOW
 %token	<v.string>	STRING
 %token  <v.number>	NUMBER
 %type	<v.port>	port
@@ -249,6 +249,8 @@ server		: SERVER optmatch STRING	{
 			    SERVER_REQUESTTIMEOUT;
 			s->srv_conf.maxrequests = SERVER_MAXREQUESTS;
 			s->srv_conf.maxrequestbody = SERVER_MAXREQUESTBODY;
+			s->srv_conf.lowwatermark = 0;
+			s->srv_conf.highwatermark = 0;
 			s->srv_conf.flags = SRVFLAG_LOG;
 			if ($2)
 				s->srv_conf.flags |= SRVFLAG_SERVER_MATCH;
@@ -697,6 +699,12 @@ conflags	: TIMEOUT timeout		{
 		}
 		| MAXIMUM REQUEST BODY NUMBER	{
 			srv_conf->maxrequestbody = $4;
+		}
+		| LOW WATERMARK NUMBER		{
+			srv_conf->lowwatermark = $3;
+		}
+		| HIGH WATERMARK NUMBER		{
+			srv_conf->highwatermark = $3;
 		}
 		;
 
@@ -1230,6 +1238,7 @@ lookup(char *s)
 		{ "ecdhe",		ECDHE },
 		{ "error",		ERR },
 		{ "fastcgi",		FCGI },
+		{ "high",		HIGH },
 		{ "hsts",		HSTS },
 		{ "include",		INCLUDE },
 		{ "index",		INDEX },
@@ -1240,6 +1249,7 @@ lookup(char *s)
 		{ "location",		LOCATION },
 		{ "log",		LOG },
 		{ "logdir",		LOGDIR },
+		{ "low",		LOW },
 		{ "match",		MATCH },
 		{ "max",		MAXIMUM },
 		{ "max-age",		MAXAGE },
@@ -1269,6 +1279,7 @@ lookup(char *s)
 		{ "tls",		TLS },
 		{ "type",		TYPE },
 		{ "types",		TYPES },
+		{ "watermark",		WATERMARK },
 		{ "with",		WITH }
 	};
 	const struct keywords	*p;
